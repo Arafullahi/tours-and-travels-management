@@ -1194,6 +1194,7 @@ class admin extends CI_Controller{
                         if (!in_array($_FILES['image']['type'], $types)) 
                         {
                             $data['image_error']="Upload valid image";
+                            $this->session->set_flashdata('message', '<div class="alert alert-warning"><strong>Warning!</strong> Upload Valid Image.</div>');
                         } 
                         else 
                         {
@@ -1201,12 +1202,17 @@ class admin extends CI_Controller{
                             move_uploaded_file($_FILES['image']['tmp_name'],"./banners/".$image_name);
                             $data1=array('name'=>$name,'banner_image'=>$image_name,'link'=>$link,'sort_order'=>$sort_order);
                             $this->banner->banner_insert($data1);
-                            $this->session->set_flashdata('message', 'Banner uploaded Successfully');
+                            $this->session->set_flashdata('message', '<div class="alert alert-success"><strong>Success!</strong> Banner Uploaded Successfully</div>');
                             redirect('admin/banners');
                         } 
                     }
+                    $data=array();
+                    $data['menu'] = $this->load->view('admin_menu',$data, TRUE);
                     $data['bannerslist']=$this->banner->getbanners();
-                     $this->load->view('admin_banner_creation',$data);
+                    $data['content']=$this->load->view('admin_banner',$data,TRUE);
+                    $data['title']="Banners";
+                    $data['page_title']="Banner List";
+                    $this->parser->parse('admin_template', $data);
              }
              else if ($this->session->userdata('is_logged_in')&& $this->session->userdata('role')=='User') 
              {
@@ -1237,6 +1243,32 @@ class admin extends CI_Controller{
         } 
         /*=================================================================*/ 
         /*=================================================================*/
+        function getbannerdetails()
+        {
+            $this->load->model('banner');
+            $ids=$this->uri->segment(3);
+            $arr=$this->banner->getbannerfromid($ids);
+            echo json_encode($arr);
+        }
+        /*=================================================================*/
+        /*=================================================================*/
+        function updatebanner()
+        {
+            $this->load->model('banner');
+            $name=$this->db->escape_str($this->input->post('name'));
+            $link=$this->db->escape_str($this->input->post('link'));
+            $sort_order=$this->db->escape_str($this->input->post('sort_order'));
+            $bid=$this->db->escape_str($this->input->post('bid'));
+            $image_name=rand(0,1000).$_FILES['image']['name'];
+            move_uploaded_file($_FILES['image']['tmp_name'],"./banners/".$image_name);
+            $data1=array('name'=>$name,'banner_image'=>$image_name,'link'=>$link,'sort_order'=>$sort_order);
+            $where=$bid;
+            $this->banner->banner_update($data1,$where);
+            $this->session->set_flashdata('message', '<div class="alert alert-success"><strong>Success!</strong> Banner Updated Successfully</div>');
+            redirect('admin/banners');
+        }
+        /*==================================================================*/
+        /*==================================================================*/
         /*New package creation */
         function new_package()
         {
@@ -1318,7 +1350,13 @@ class admin extends CI_Controller{
                             redirect('admin/new_package');
                         }
                 }
-                $this->load->view('admin_new_package',$data);
+                //$this->load->view('admin_new_package',$data);
+                $data['menu'] = $this->load->view('admin_menu',$data, TRUE);
+                    $data['packagelist']=$this->banner->getpackagelist();
+                    $data['content']=$this->load->view('admin_package',$data,TRUE);
+                    $data['title']="Packages";
+                    $data['page_title']="Pckage List";
+                    $this->parser->parse('admin_template', $data);
             }
             else
             {
@@ -1326,6 +1364,23 @@ class admin extends CI_Controller{
                 $this->load->view('login',$error);
             }
         }
+        /*========================================================================*/
+        function package_delete()
+        {
+            $this->load->model('banner');
+            if($this->session->userdata('is_logged_in')&& $this->session->userdata('role')=='Admin')
+            {
+                $ids=$this->uri->segment(3);
+                $this->banner->deletepackage($ids);
+                redirect('admin/new_package');
+            }
+            else
+            {
+                $error['error']='!!You dont have persmission, please log in!!';
+                $this->load->view('login',$error);
+            }
+        } 
+        /*========================================================================*/
         function package_lists()
         {
              $this->load->model('banner');
